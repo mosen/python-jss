@@ -36,6 +36,7 @@ setup(name = 'python-jss',
       url = 'https://github.com/sheagcraig/python-jss/',
       license = 'GPLv3',
       # pyOpenSSL is required, but included in requests.
+      install_requires=["requests", "ndg-httpsclient", "pyasn1"],
       extras_require={
           'reST': [
               "Sphinx>=1.5.3", "docutils>=0.13.1"]
