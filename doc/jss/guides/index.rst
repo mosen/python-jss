@@ -11,6 +11,7 @@ Developer Guides
     basics.rst
     validation.rst
     notes.rst
+    attributes.rst
     
     
     
