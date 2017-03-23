@@ -68,7 +68,7 @@ class JSSUnsupportedSearchMethodError(JSSError):
 
 
 class JSSFileUploadParameterError(JSSError):
-    """FileUpload parameter poorfly formed exception."""
+    """FileUpload parameter poorly formed exception."""
     pass
 
 
