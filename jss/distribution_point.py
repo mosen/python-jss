@@ -838,3 +838,27 @@ class CDP(DistributionServer):
     """
     required_attrs = {"jss"}
     destination = "2"
+
+
+class JCDS(DistributionServer):
+    """Class for representing a Jamf Cloud Distribution Server and its controlling JSS.
+
+    The JCDS implements a remote API for uploading and downloading files via REST methods.
+    """
+    required_attrs = {"jss"}
+    destination = "3"
+
+    def __init__(self, **connection_args):
+        """Set up a connection to a distribution server.
+
+        Args:
+            connection_args: Dict, with required key:
+                jss: A JSS Object.
+        """
+        super(DistributionServer, self).__init__(**connection_args)
+        self.connection["url"] = self.connection["jss"].base_url
+
+    def _build_url(self):
+        """Build the Bucket root URL for the current jamfcloud JSS."""
+        bucket_id = self.connection.get('bucket_id')
+        self.connection['']
