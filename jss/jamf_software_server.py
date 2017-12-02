@@ -25,9 +25,11 @@ import os
 import re
 from urllib import quote
 from xml.etree import ElementTree
+import json
 
 import requests
 
+from jss import jssscrapedobjects
 from . import distribution_points
 from .exceptions import (JSSGetError, JSSPutError, JSSPostError,
                          JSSDeleteError, JSSMethodNotAllowedError)
@@ -214,7 +216,7 @@ class JSS(object):
 
         return xmldata
 
-    def post(self, obj_class, url_path, data):
+    def post(self, obj_class, url_path, data, serialize='xml'):
         """POST an object to the JSS. For creating new objects only.
 
         The data argument is POSTed to the JSS, which, upon success,
@@ -250,8 +252,15 @@ class JSS(object):
         # The JSS expects a post to ID 0 to create an object
 
         request_url = "%s%s" % (self._url, url_path)
-        data = ElementTree.tostring(data)
-        response = self.session.post(request_url, data=data)
+
+        if serialize == 'xml':
+            data = ElementTree.tostring(data)
+            response = self.session.post(request_url, data=data)
+        elif serialize == 'json':
+            data = json.dumps(data)
+            response = self.session.post(request_url, data=data, headers={'Content-Type': 'application/json'})
+        else:
+            response = self.session.post(request_url, data=data, headers={'Content-Type': 'application/json'})
 
         if response.status_code == 201 and self.verbose:
             print "POST %s: Success" % request_url
@@ -804,6 +813,11 @@ class JSS(object):
         """{dynamic_docstring}"""
         return self.factory.get_object(jssobjects.VPPAccount, data)
 
+
+    # Scraped Object Types
+
+    def JCDSConfiguration(self, data=None):
+        return self.scraper_factory.get_object(jssscrapedobjects.JCDSConfiguration, data)
 
     #pylint: enable=invalid-name
 
