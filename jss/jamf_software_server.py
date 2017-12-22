@@ -859,3 +859,23 @@ class JSSObjectFactory(object):
                         self) for response_object in response_objects]
 
         return JSSObjectList(self, obj_class, objects)
+
+
+class JSSUAPIObjectFactory(object):
+    """Create JSSUAPIObjects intelligently based on a single parameter.
+
+    Attributes:
+        jss: Copy of a JSS object to which API requests are
+        delegated.
+    """
+
+    def __init__(self, jss):
+        """Configure a JSSUAPIObjectFactory
+
+        Args:
+            jss: JSS object to which API requests should be
+                delegated.
+        """
+        self.jss = jss
+
+    
