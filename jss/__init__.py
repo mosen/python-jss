@@ -58,33 +58,14 @@ from .curl_adapter import CurlAdapter
 from .distribution_point import (AFPDistributionPoint, SMBDistributionPoint,
                                  JDS, CDP, LocalRepository)
 from .distribution_points import DistributionPoints
-from .exceptions import (
-    JSSPrefsMissingFileError, JSSPrefsMissingKeyError, JSSGetError,
-    JSSPutError, JSSPostError, JSSDeleteError, JSSMethodNotAllowedError,
-    JSSSSLVerifyError, JSSUnsupportedSearchMethodError,
-    JSSFileUploadParameterError, JSSUnsupportedFileType, JSSError)
+from .exceptions import *
 from .jamf_software_server import JSS
 from .jssobject import JSSObject
-from .jssobjects import (
-    Account, AccountGroup, ActivationCode, AdvancedComputerSearch,
-    AdvancedMobileDeviceSearch, AdvancedUserSearch, Building, BYOProfile,
-    Category, Class, CommandFlush, Computer, ComputerCheckIn, ComputerCommand,
-    ComputerConfiguration, ComputerExtensionAttribute, ComputerGroup,
-    ComputerHistory, ComputerInventoryCollection, ComputerInvitation,
-    ComputerReport, Department, DirectoryBinding, DiskEncryptionConfiguration,
-    DistributionPoint, DockItem, EBook, FileUpload, GSXConnection, IBeacon,
-    JSSUser, LDAPServer, LicensedSoftware, LogFlush, MacApplication,
-    ManagedPreferenceProfile, MobileDevice, MobileDeviceApplication,
-    MobileDeviceCommand, MobileDeviceConfigurationProfile,
-    MobileDeviceEnrollmentProfile, MobileDeviceExtensionAttribute,
-    MobileDeviceInvitation, MobileDeviceGroup, MobileDeviceProvisioningProfile,
-    NetbootServer, NetworkSegment, OSXConfigurationProfile, Package, Patch,
-    Peripheral, PeripheralType, Policy, Printer, RestrictedSoftware,
-    RemovableMACAddress, SavedSearch, Script, Site, SoftwareUpdateServer,
-    SMTPServer, UserExtensionAttribute, User, UserGroup, VPPAccount,
-    VPPAssignment, VPPInvitation)
+from .jssobjects import *
 from .jss_prefs import JSSPrefs
-from queryset import QuerySet
+from .misc_endpoints import *
+from .queryset import QuerySet
+from .pretty_element import PrettyElement
 
 # If a system doesn't have the required dependencies for requests, do
 # nothing.
@@ -93,9 +74,10 @@ try:
 except ImportError:
     RequestsAdapter = None
 
-from .tools import is_osx, is_linux
+from .tools import is_osx, is_linux, element_str
 
 # Deprecated
 from .jssobjectlist import JSSObjectList
+
 
 __version__ = "2.0.0"

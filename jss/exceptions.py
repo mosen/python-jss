@@ -24,54 +24,38 @@ class JSSError(Exception):
     pass
 
 
-class JSSPrefsMissingFileError(JSSError):
-    """Missing preference file exception."""
-    pass
+class RequestError(JSSError):
+
+    def __init__(self, *args, **kwargs):
+        super(RequestError, self).__init__(*args, **kwargs)
+        self.status_code = None
 
 
-class JSSPrefsMissingKeyError(JSSError):
-    """Incomplete preferences file exception."""
-    pass
-
-
-class JSSGetError(JSSError):
+class GetError(RequestError):
     """GET exception."""
     pass
 
 
-class JSSPutError(JSSError):
+class PutError(RequestError):
     """PUT exception."""
     pass
 
 
-class JSSPostError(JSSError):
+class PostError(RequestError):
     """POST exception."""
     pass
 
 
-class JSSDeleteError(JSSError):
+class DeleteError(RequestError):
     """DEL exception."""
     pass
 
 
-class JSSMethodNotAllowedError(JSSError):
-    """Casper object not allowed to use that method."""
+class MethodNotAllowedError(JSSError):
+    """JSSObject is not allowed to use HTTP method."""
     pass
 
-class JSSSSLVerifyError(JSSError):
+
+class SSLVerifyError(JSSError):
     """Server's certificate could not be verified."""
-    pass
-
-class JSSUnsupportedSearchMethodError(JSSError):
-    """Unrecognized or unsupported GET search argument."""
-    pass
-
-
-class JSSFileUploadParameterError(JSSError):
-    """FileUpload parameter poorly formed exception."""
-    pass
-
-
-class JSSUnsupportedFileType(JSSError):
-    """Unsupported file type exception."""
     pass

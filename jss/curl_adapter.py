@@ -33,9 +33,10 @@ JSS object beginning with python-jss 2.0.0.
 """
 
 
+import copy
 import subprocess
 
-from .exceptions import JSSError, JSSSSLVerifyError
+from .exceptions import JSSError, SSLVerifyError
 
 
 class CurlAdapter(object):
@@ -47,6 +48,7 @@ class CurlAdapter(object):
             True.
         use_tls: Whether to use TLS. Defaults to True.
     """
+    base_headers = ['Accept: application/xml']
 
     def __init__(self):
         self.auth = ('', '')
@@ -57,7 +59,8 @@ class CurlAdapter(object):
         return self._request(url, headers)
 
     def post(self, url, data=None, headers=None, files=None):
-        header = ['Content-Type: text/xml']
+        content_type = 'text/xml' if not files else 'multipart/form-data'
+        header = ['Content-Type: {}'.format(content_type)]
         if headers:
             header += headers
 
@@ -65,7 +68,8 @@ class CurlAdapter(object):
         return self._request(url, header, data, files, **post_kwargs)
 
     def put(self, url, data=None, headers=None, files=None):
-        header = ['Content-Type: text/xml']
+        content_type = 'text/xml' if not files else 'multipart/form-data'
+        header = ['Content-Type: {}'.format(content_type)]
         if headers:
             header += headers
         put_args = {"--request": "PUT"}
@@ -92,12 +96,12 @@ class CurlAdapter(object):
             response = subprocess.check_output(command)
         except subprocess.CalledProcessError as err:
             if err.returncode == 60:
-                raise JSSSSLVerifyError(
+                raise SSLVerifyError(
                     'The JSS\'s certificate cannot be verified.')
             else:
                 raise JSSError('Unknown curl error')
 
-        return CurlResponseAdapter(response)
+        return CurlResponseAdapter(response, url)
 
     def _build_command(
         self, url, headers=None, data=None, files=None, **kwargs):
@@ -107,7 +111,8 @@ class CurlAdapter(object):
 
         Args:
             url (str): Full URL to request.
-            headers (container): Header strings to use. Defaults to None.
+            headers (sequence of str): Header strings to use. Defaults to
+                None.
             kwargs (str: str): Extra commandline arguments and their
                 values to be added to the curl command.
 
@@ -131,9 +136,11 @@ class CurlAdapter(object):
         if self.use_tls:
             command.append("--tlsv1")
 
+        compiled_headers = copy.copy(self.base_headers)
         if headers:
-            for header in headers:
-                command += ['--header', header]
+            compiled_headers += headers
+        for header in compiled_headers:
+            command += ['--header', header]
 
         if data:
             command += ["--data", data]
@@ -160,8 +167,9 @@ class CurlAdapter(object):
 class CurlResponseAdapter(object):
     """Wrapper for Curl responses"""
 
-    def __init__(self, response):
+    def __init__(self, response, url):
         self.response = response
+        self.url = url
         content, _, status_code = response.rpartition("|")
         try:
             self.status_code = int(status_code)

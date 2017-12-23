@@ -15,54 +15,92 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """queryset.py
 
-Class that adds some extra functionality to a basic list. Used for the
-result of all queries in python-jss, as well as unpickling and loading.
+Class that adds some extra functionality to a basic list. Used as the
+result of all queries in python-jss.
 """
 
 
-from collections import MutableMapping
+from collections import defaultdict
 import cPickle
+import datetime
 import os
+
+from .jssobject import DATE_FMT, Identity
+
+
+STR_FMT = "{0:>{1}} | {2:>{3}} | {4:>{5}}"
 
 
 class QuerySet(list):
-    old_docstring = """A list style collection of JSSObjects.
+    """A list style collection of JSSObjects.
 
-    List operations retrieve minimal or overview information for most
+    Listing operations retrieve minimal or overview information for most
     object types. For example, we may want to see all the Computers on
     the JSS but that does not mean we want to do a full object GET for
     each one.
 
-    The JSSObjectList provides Methods to retrieve individual members'
-    full information (retrieve_by_id, retrieve), and to retrieve the
-    full information for each member of the entire list (retrieve_all).
-
-    Attributes:
-        factory: A JSSObjectFactory for managing object construction and
-            searching.
-        obj_class: A JSSObject class (e.g. jss.Computer) that the list
-            contains.
+    QuerySets hold instances of a single type of JSSObject, and use the
+    python list API, while adding some extra helper-methods on top.
     """
 
-    def __init__(self, factory, obj_class, objects=None):
-        """"""
-        if not isinstance(objects, (list, tuple, set)):
-            raise TypeError
+    def __init__(self, objects):
+        """Construct a list of JSSObjects.
+
+        Args:
+            objects (sequence of JSSObjects):
+                Sequences must be of a single class.
+        """
+        if objects and not len({i.__class__ for i in objects}) == 1:
+            raise ValueError
         super(QuerySet, self).__init__(objects)
-        self.contained_class = obj_class
+        self.sort()
+        self.contained_class = objects[0].__class__ if objects else None
 
     def __str__(self):
         """Make data human readable."""
-        #Note: Large lists/objects may take a long time to indent!
-        name_max= max(len(item.name) for item in self)
-        id_max = max(len(str(item.id)) for item in self)
-        results = ["QueryResults for JSS object type: '{}':".format(
-            self.contained_class)]
-        results.append((name_max + id_max + 11) * '-')
+        # Make ID, Name first, no matter what.
+        sort_keys = ["id", "name"]
+        if self:
+            sort_keys.extend([
+                key for key in self[0]._basic_identity.keys() if
+                key not in sort_keys])
+
+        # Build a dict of max lengths per column for table output.
+        lengths = defaultdict(int)
         for item in self:
-            line = "Name: {0:>{2}} ID: {1:>{3}}".format(
-                item.name, item.id, name_max, id_max)
-            results.append(line)
+            for key in sort_keys:
+                val = item._basic_identity[key] or ""
+                length = max(len(key), len(val))
+                if length > lengths[key]:
+                    lengths[key] = length
+
+        # Build a format string for row output.
+        format_strings = []
+        for key in sort_keys:
+            length = lengths[key]
+            format_strings.append("{{data[{}]:>{}}}".format(key, length))
+
+        cached = 'cached'
+        cached_format = '| {{cached:>{}}} |'.format(len(cached))
+
+        fmt = "| " + " | ".join(format_strings) + cached_format
+
+        # Begin building output with header lines.
+        results = ["{} QuerySet".format(self.contained_class.__name__)]
+        headers = {key: key for key in lengths}
+        header_line = fmt.format(data=headers, cached="cached")
+        bar = len(header_line) * '-'
+        results.extend([bar, header_line, bar])
+
+        str_cached = (
+            lambda i: str(i.cached) if isinstance(i.cached, bool) else 'True')
+
+        table = [
+            fmt.format(data=item._basic_identity, cached=str_cached(item)) for
+            item in self]
+        results.extend(table)
+
+        results.append(bar)
         return "\n".join(results)
 
     def __repr__(self):
@@ -77,118 +115,61 @@ class QuerySet(list):
         """Sort list elements by name."""
         super(QuerySet, self).sort(key=lambda k: k.name.upper())
 
-    def old__init__(self, factory, obj_class, objects):
-        """Construct a list of JSSObjects.
-
-        Args:
-            factory: A JSSObjectFactory for managing object construction
-                in the event one of the retrieval methods is used.
-            obj_class: A JSSObject class (e.g. jss.Computer) that the
-                list contains, or None, if you are providing the full
-                    objects.
-            objects: A list of JSSListData objects (incomplete data
-                about a JSSObject, as returned by the JSS from a listing
-                request).
-        """
-        self.factory = factory
-        self.obj_class = obj_class
-        super(JSSObjectList, self).__init__(objects)
-
-    def old__repr__(self):
-        """Make data human readable."""
-        # Note: Large lists/objects may take a long time to indent!
-        if self and all([isinstance(item, JSSListData) for item in self]):
-            max_key_width = max([len(key) for obj in self for key in obj])
-            list_index = "List index"
-            if max_key_width < len(list_index):
-                max_key_width = len(list_index)
-            max_val_width = max([len(unicode(val)) for obj in self for val in
-                                obj.values()])
-            max_width = max_key_width + max_val_width + 2
-            delimeter = max_width * "-"
-            output = [delimeter]
-            for obj in self:
-                output.append("{:>{max_key}}: {:>{max_val}}".format(
-                    list_index, self.index(obj), max_key=max_key_width,
-                    max_val=max_val_width))
-                for key, val in obj.items():
-                    output.append(u"{:>{max_key}}: {:>{max_val}}".format(
-                        key, val, max_key=max_key_width,
-                        max_val=max_val_width))
-                output.append(delimeter)
-            return "\n".join(output).encode("utf-8")
-        else:
-            output = []
-            for item in self:
-                output.append(item.__repr__())
-            return "[\n%s]" % ",\n".join(output)
-
-    def retrieve(self, index):
-        """Return a JSSObject for the JSSListData element at index."""
-        return self[index].retrieve()
-
-    def retrieve_by_id(self, id_):
-        """Return a JSSObject for the element with ID id_"""
-        items_with_id = [item for item in self if item.id == int(id_)]
-        if len(items_with_id) == 1:
-            return items_with_id[0].retrieve()
-
-    def retrieve_all(self, subset=None):
-        """Return a list of all JSSListData elements as full JSSObjects.
+    def retrieve_all(self):
+        """Tell each contained object to retrieve its data from the JSS
 
         This can take a long time given a large number of objects,
-        and depending on the size of each object. Subsetting to only
-        include the data you need can improve performance.
+        and depending on the size of each object.
 
-        Args:
-            subset: For objects which support it, a list of sub-tags to
-                request, or an "&" delimited string, (e.g.
-                "general&purchasing").  Default to None.
+        Returns:
+            self (QuerySet) to allow method chaining.
         """
-        # Attempt to speed this procedure up as much as can be done.
+        for obj in self:
+            if not obj.cached:
+                obj.retrieve()
 
-        get_object = self.factory.get_object
-        obj_class = self.obj_class
+        return self
 
-        full_objects = [get_object(obj_class, list_obj.id, subset) for list_obj
-                        in self]
-        return JSSObjectList(self.factory, obj_class, full_objects)
+    def save_all(self):
+        """Tell each contained object to save its data to the JSS
 
-    def pickle(self, path):
-        """Write objects to python pickle.
+        This can take a long time given a large number of objects,
+        and depending on the size of each object.
 
-        Pickling is Python's method for serializing/deserializing
-        Python objects. This allows you to save a fully functional
-        JSSObject to disk, and then load it later, without having to
-        retrieve it from the JSS.
-
-        This method will pickle each item as it's current type; so
-        JSSListData objects will be serialized as JSSListData, and
-        JSSObjects as JSSObjects. If you want full data, do:
-            my_list.retrieve_all().pickle("filename")
-
-        Args:
-            path: String file path to the file you wish to (over)write.
-                Path will have ~ expanded prior to opening.
+        Returns:
+            self (QuerySet) to allow method chaining.
         """
-        with open(os.path.expanduser(path), "wb") as pickle:
-            cPickle.Pickler(pickle, cPickle.HIGHEST_PROTOCOL).dump(self)
+        for obj in self:
+            obj.save()
+
+        return self
+
+    def invalidate(self):
+        """Clear the cache datetime for all contents.
+
+        This causes objects to retrieve their data again when accessed.
+        """
+        for i in self: i.cached = False
+
+    def names(self):
+        """Return a generator of contents names"""
+        return (item.name for item in self)
+
+    def ids(self):
+        """Return a generator of contents ids"""
+        return (item.id for item in self)
 
     @classmethod
-    def from_pickle(cls, path):
-        """Load objects from pickle file.
+    def from_response(cls, obj_class, response, jss=None, **kwargs):
+        """Build a QuerySet from a listing Response."""
+        response_objects = (
+            i for i in response if i is not None and i.tag != "size")
 
-        Pickling is Python's method for serializing/deserializing
-        Python objects. This allows you to save a fully functional
-        JSSObject to disk, and then load it later, without having to
-        retrieve it from the JSS.
+        dicts = (
+            {child.tag: child.text for child in item} for item in
+            response_objects)
+        identities = (Identity(d) for d in dicts)
 
-        This method loads up a JSSObjectList from a pickle file.
+        objects = [obj_class(jss, data=i, **kwargs) for i in identities]
 
-        Args:
-            path: String file path to the file you wish to load from.
-                Path will have ~ expanded prior to opening.
-        """
-        with open(os.path.expanduser(path), "rb") as pickle:
-            return cPickle.Unpickler(pickle).load()
-
+        return cls(objects)

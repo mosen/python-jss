@@ -20,13 +20,14 @@ Helper functions for python-jss.
 
 
 import copy
+from functools import wraps
 import os
 import re
 from urllib import quote
 from xml.etree import ElementTree
 
 
-PKG_TYPES = [".PKG", ".DMG", ".ZIP"]
+PKG_TYPES = {".PKG", ".DMG", ".ZIP"}
 
 
 def is_osx():
@@ -76,7 +77,7 @@ def convert_response_to_text(response):
         if content_line:
             error.append(content_line.group(1))
 
-    return ". ".join(error)
+    return ". ".join(error) + " {}.".format(response.url)
 
 
 def error_handler(exception_cls, response):
@@ -146,11 +147,8 @@ def indent_xml(elem, level=0, more_sibs=False):
                 elem.tail += pad
 
 
-def element_repr(elem):
-    """Return a string with indented XML data.
-
-    Used to replace the __repr__ method of Element.
-    """
+def element_str(elem):
+    """Return a string with indented XML data."""
     # deepcopy so we don't mess with the valid XML.
     pretty_data = copy.deepcopy(elem)
     indent_xml(pretty_data)
@@ -158,4 +156,23 @@ def element_repr(elem):
 
 
 def quote_and_encode(string):
+    """Encode a bytes string to UTF-8 and then urllib.quote"""
     return quote(string.encode('UTF_8'))
+
+
+def triggers_cache(func):
+    """Decorator for enabling methods to trigger cache filling."""
+
+    @wraps(func)
+    def trigger_cache(self, *args, **kwargs):
+        if hasattr(self, 'cached') and not self.cached:
+            self.retrieve()
+        return func(self, *args, **kwargs)
+
+    return trigger_cache
+
+
+def decorate_class_with_caching(cls, methods):
+    for method_name in methods:
+        decorated_method = triggers_cache(getattr(cls, method_name))
+        setattr(cls, method_name, decorated_method)
