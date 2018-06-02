@@ -20,6 +20,8 @@ the JAMF Pro Server.
 """
 
 from __future__ import division
+from __future__ import print_function
+
 import os
 import re
 import shutil
@@ -458,7 +460,7 @@ class AFPDistributionPoint(MountedRepository):
         # mount_afp "afp://scraig:<password>@address/share" <mnt_point>
         if is_osx():
             if self.connection["jss"].verbose:
-                print self.connection["mount_url"]
+                print(self.connection["mount_url"])
             if mount_share:
                 self.connection["mount_point"] = mount_share(
                     self.connection["mount_url"])
@@ -468,14 +470,14 @@ class AFPDistributionPoint(MountedRepository):
                         self.connection["mount_url"],
                         self.connection["mount_point"]]
                 if self.connection["jss"].verbose:
-                    print " ".join(args)
+                    print(" ".join(args))
                 subprocess.check_call(args)
         elif is_linux():
             args = ["mount_afp", "-t", self.protocol,
                     self.connection["mount_url"],
                     self.connection["mount_point"]]
             if self.connection["jss"].verbose:
-                print " ".join(args)
+                print(" ".join(args))
             subprocess.check_call(args)
         else:
             raise JSSError("Unsupported OS.")
@@ -536,7 +538,7 @@ class SMBDistributionPoint(MountedRepository):
             if mount_share:
                 mount_url = "smb:%s" % self.connection["mount_url"]
                 if self.connection["jss"].verbose:
-                    print mount_url
+                    print(mount_url)
                 self.connection["mount_point"] = mount_share(mount_url)
             else:
                 # Non-Apple OS X python:
@@ -544,7 +546,7 @@ class SMBDistributionPoint(MountedRepository):
                         self.connection["mount_url"],
                         self.connection["mount_point"]]
                 if self.connection["jss"].verbose:
-                    print " ".join(args)
+                    print(" ".join(args))
                 subprocess.check_call(args)
         elif is_linux():
             args = ["mount", "-t", "cifs", "-o",
@@ -555,7 +557,7 @@ class SMBDistributionPoint(MountedRepository):
                                  self.connection["share_name"]),
                     self.connection["mount_point"]]
             if self.connection["jss"].verbose:
-                print " ".join(args)
+                print(" ".join(args))
             subprocess.check_call(args)
         else:
             raise JSSError("Unsupported OS.")
@@ -634,7 +636,7 @@ class DistributionServer(Repository):
             data=resource.read(),
             headers=headers)
         if self.connection["jss"].verbose:
-            print response
+            print(response)
 
     def _copy_new(self, filename, id_=-1, file_type=0):
         """Upload a file to the distribution server.
@@ -655,9 +657,9 @@ class DistributionServer(Repository):
             url=self.connection["upload_url"],
             data=resource.read(),
             headers=headers)
-        print response
+        print(response)
         if self.connection["jss"].verbose:
-            print response
+            print(response)
 
     def delete_with_casper_admin_save(self, pkg):
         """Delete a pkg from the distribution server.
