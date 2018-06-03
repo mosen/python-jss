@@ -4,6 +4,9 @@ import os
 from jss import JSSPrefs, JSS
 from xml.etree import ElementTree
 from subprocess import call
+from boto.s3.connection import S3Connection
+from boto.s3.bucket import Bucket
+
 
 JSS_PREFS = {
     'jss_url': 'https://localhost:8444',
@@ -125,3 +128,13 @@ def uapi_token(jss_prefs_dict, j):
 @pytest.fixture
 def pkg_path():
     return os.path.abspath("testdata/Microsoft_Outlook_2016_16.15.18070902_Installer.pkg")
+
+
+@pytest.fixture
+def s3_connection():
+    return S3Connection(is_secure=False)
+
+
+@pytest.fixture
+def s3_bucket(s3_connection):  # type: (S3Connection) -> Bucket
+    return s3_connection.get_bucket('com.github.mosen.python-jss.pytest')
