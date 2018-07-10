@@ -56,6 +56,6 @@ class TestJSS(object):
 
     def test_scrape(self, j):
         #scrape_url = '/'
-        scrape_url = 'legacy/cloudDistributionPoint.html?id=0&o=r'
+        scrape_url = 'legacy/packages.html?id=-1&o=c'
         r = j.scrape(scrape_url)
         assert r is not None
