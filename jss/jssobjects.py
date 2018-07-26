@@ -137,9 +137,9 @@ class Computer(Container):
     root_tag = "computer"
     _endpoint_path = "computers"
     search_types = {"name": "name", "serial_number": "serialnumber",
-                    "udid": "udid", "macaddress": "macaddress"}
+                    "udid": "udid", "macaddress": "macaddress", "match": "match"}
     # The '/computers/match/name/{matchname}' variant is not supported
-    # here because in testing, it didn't actually do anything.
+    # here because in testing, it didn't actually do anything. - It does now, at least in 10.5 -mo
     allowed_kwargs = ('subset', 'match')
 
     @property
