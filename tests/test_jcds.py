@@ -92,12 +92,19 @@ class TestJCDS(object):
         pkg_info = jcds.exists(pkg_path)
         assert pkg_info is not None
 
-    @pytest.mark.skip
+
     def test_jcds_exists_with_checksum(self, cloud_j, pkg_path):  # type: (JSS) -> None
         """Assert that we can check whether the package exists on the JCDS and matches our local checksum."""
         jcds = JCDS(jss=cloud_j)
         jcds._scrape_tokens()
-        pkg_info = jcds.exists(pkg_path)
+
+        hash_md5 = hashlib.md5()
+        with open(pkg_path, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        checksum_md5 = hash_md5.hexdigest()
+
+        pkg_info = jcds.exists(pkg_path, checksum_md5=checksum_md5)
         assert pkg_info is not None
 
     @pytest.mark.skip

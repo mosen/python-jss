@@ -1143,7 +1143,11 @@ class JCDS(CloudDistributionServer):
             urlparts = url.split('/')
 
             if urlparts[-1] == basefname:
-                return p
+                if checksum_md5 is not None:
+                    if p['checksum'] == checksum_md5:
+                        return p
+                else:
+                    return p
 
         return False
 
