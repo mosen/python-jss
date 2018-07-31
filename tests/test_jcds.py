@@ -5,6 +5,8 @@ import urllib
 from jss.jamf_software_server import JSS
 import jss
 from jss.distribution_point import JCDS
+import hashlib
+
 
 try:
     # Python 2.6-2.7
@@ -82,3 +84,23 @@ class TestJCDS(object):
         pkg = cloud_j.Package(os.path.basename(pkg_path))
         print(pkg)
         pkg.save()
+
+    def test_jcds_exists(self, cloud_j, pkg_path):  # type: (JSS) -> None
+        """Assert that we can check whether the package exists on the JCDS."""
+        jcds = JCDS(jss=cloud_j)
+        jcds._scrape_tokens()
+        pkg_info = jcds.exists(pkg_path)
+        assert pkg_info is not None
+
+    @pytest.mark.skip
+    def test_jcds_exists_with_checksum(self, cloud_j, pkg_path):  # type: (JSS) -> None
+        """Assert that we can check whether the package exists on the JCDS and matches our local checksum."""
+        jcds = JCDS(jss=cloud_j)
+        jcds._scrape_tokens()
+        pkg_info = jcds.exists(pkg_path)
+        assert pkg_info is not None
+
+    @pytest.mark.skip
+    def test_jcds_caches_upload_token(self, cloud_j):  # type: (JSS) -> None
+        """Assert that when an upload token is discovered for a URL, it is saved in the autopkg or python-jss prefs"""
+        pass

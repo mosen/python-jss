@@ -993,6 +993,7 @@ class JCDS(CloudDistributionServer):
         """
         super(JCDS, self).__init__(**connection_args)
         self.connection["url"] = "JCDS"
+        self.download_token = None
 
     def _scrape_tokens(self):
         """Scrape JCDS upload URL and upload access token from the jamfcloud instance."""
@@ -1123,15 +1124,26 @@ class JCDS(CloudDistributionServer):
         else:
             self._copy_threaded(filename, self.connection['jcds_upload_token'])
 
-    def exists(self, filename):
-        """Check whether a package file already exists."""
+    def exists(self, filename, checksum_md5=None):
+        """Check whether a package file already exists.
+
+        Args:
+            filename (str): Full path to the file being uploaded.
+            checksum_md5 (str, None, optional): Optional MD5 Hash to compare against.
+
+        Return:
+            dict of casper package info, or None
+        """
         packages = self.package_index_using_casper()
+        basefname = os.path.basename(filename)
+
         for p in packages:
             url, token = p['fileURL'].split('?', 2)
+            self.download_token = token
             urlparts = url.split('/')
 
-            if urlparts[-1] == filename:
-                return True
+            if urlparts[-1] == basefname:
+                return p
 
         return False
 

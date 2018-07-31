@@ -120,7 +120,7 @@ def uapi_token(jss_prefs_dict, j):
 
 @pytest.fixture
 def pkg_path():
-    return os.path.abspath("testdata/Microsoft_Outlook_2016_16.15.18070902_Installer.pkg")
+    return os.path.abspath("testdata/OneDrive.pkg")
 
 
 @pytest.fixture
